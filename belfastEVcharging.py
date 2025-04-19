@@ -1,6 +1,8 @@
 import os
 import geopandas as gpd
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import matplotlib.lines as mlines
 from cartopy.feature import ShapelyFeature
 import cartopy.crs as ccrs
 from cartopy.io.img_tiles import OSM
@@ -56,9 +58,21 @@ def scale_bar(ax, length=1, location=(0.92, 0.95)): # Set location of bar within
 
     return ax
 
+# Create patches for the legend
+def map_legend(ax):
+    buffer_patch = mpatches.Patch(color="lightsalmon", label="200m Buffer") # Create legend patch for Buffer polygon data
+    substations_marker = mlines.Line2D([], [], color='dodgerblue', marker='s', linestyle='None',
+markersize=8, label="Substations") # Create legend patch for Substation point data
+    charging_marker = mlines.Line2D([], [], color='limegreen', marker='o', linestyle='None',
+markersize=8, label="EV Charging Points") # Create a legend patch for EV Charging point data
+    
+    ax.legend(handles=[buffer_patch, substations_marker, charging_marker], loc='lower left', fontsize=8, frameon=True) # Determines position and style of legend
+
 # Add map elements 
 ax.gridlines(draw_labels=False) # Add gridlines to figure 
-scale_bar(ax)
+scale_bar(ax) # Add scale to figure
+map_legend(ax) # Add legend to figure
+ax.set_title("EV Charging Stations in relation to Substations in Belfast", fontsize=14, pad20) # Add title to figure
 
 # Export Map 
 fig.savefig('belfastChargers_python.jpeg', dpi =300) # Export map as JPEG
