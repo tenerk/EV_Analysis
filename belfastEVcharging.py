@@ -17,7 +17,7 @@ substations_wm = substations.to_crs(epsg=3857) # Convert data from Irish Grid to
 EVcharging_wm = EVcharging.to_crs(epsg=3857) # Convert data from Irish Grid to Web Mercator
 
 # Create 200m buffer around substations
-buffer = substations_wm.buffer(200) # Create buffer
+buffer = substations_wm.buffer(200) # Create buffer of 200m - units derived from substation_wm 
 buffer_gdf = gpd.GeoDataFrame(geometry=buffer) # Convert the GeoSeries created by the buffer method to a GeoDataFrame
 buffer_gdf.set_crs(epsg=3857, inplace=True) # Sets GDF to EPSG 3857
 
@@ -26,13 +26,13 @@ within_buffer = [] # Create an empty list to store inside or outside values
 
 for point in EVcharging_wm.geometry: # Loop through all points within named dataset
     is_within = buffer_gdf.intersects(point).any() # Check if point intersects buffer
-    within_buffer.append(is_within) # Append results to list 
+    within_buffer.append(is_within) # Append true/false results to list 
 
 EVcharging_wm["within_buffer"] = within_buffer # Adds list as column to dataset
 
 # Create an Inside and Outside GeoDataFrame
-EV_inside = EVcharging_wm[EVcharging_wm["within_buffer"]] # Create a GDF for points within the buffer
-EV_outside = EVcharging_wm[~EVcharging_wm["within_buffer"]] # Create a GDF for points outside the buffer
+EV_inside = EVcharging_wm[EVcharging_wm["within_buffer"]] # Create a GDF for points within the buffer - True values
+EV_outside = EVcharging_wm[~EVcharging_wm["within_buffer"]] # Create a GDF for points outside the buffer - False values
 
 # Create a map reference system to project data
 map_crs = ccrs.Mercator() # Creates a standard coordinate system for the map figure to match the data and basemap
@@ -42,8 +42,8 @@ fig = plt.figure(figsize=(10, 10)) # Create a figure of 10 inches x 10 inches
 ax = plt.axes(projection=map_crs) # Creates an axis in EPSG 3857 Web Mercator
 
 # Set extent of figure
-ax.set_xlim(buffer_gdf.total_bounds[[0, 2]])
-ax.set_ylim(buffer_gdf.total_bounds[[1, 3]])
+ax.set_xlim(buffer_gdf.total_bounds[[0, 2]]) # Sets extent to match total bounds of buffer_gdf - x coordinate
+ax.set_ylim(buffer_gdf.total_bounds[[1, 3]]) # Sets extent to match total bounds of buffer_gdf - y coordinate
 
 # Add Basemap to figure
 cx.add_basemap(ax, source=cx.providers.OpenStreetMap.Mapnik) # Add basemap to figure 
@@ -53,11 +53,11 @@ buffer_feature = ShapelyFeature(substations_wm.geometry, map_crs, edgecolor="lig
 ax.add_feature(buffer_feature) # Add buffers to figure
 
 # Add Substations to figure
-substations_feature = ax.plot(substations_wm.geometry.x, substations_wm.geometry.y, 's', color="dodgerblue", ms=3, label="NIE Substations") # Add subtations to figure
+substations_feature = ax.plot(substations_wm.geometry.x, substations_wm.geometry.y, 's', color="dodgerblue", ms=3, label="NIE Substations") # Add subtations to figure as a blue square
 
 # Add EV Charging Stations to figure 
-EVcharging_inside_feature = ax.plot(EV_inside.geometry.x, EV_inside.geometry.y, 'o', color="limegreen", ms=4, label="EV Charging Points inside Buffer") # add charging stations inside buffer to figure
-EVcharging_outside_feature = ax.plot(EV_outside.geometry.x, EV_outside.geometry.y, 'o', color="red", ms=4, label="EV Charging Points outside Buffer") # add charging stations outside buffer to figure
+EVcharging_inside_feature = ax.plot(EV_inside.geometry.x, EV_inside.geometry.y, 'o', color="limegreen", ms=4, label="EV Charging Points inside Buffer") # add charging stations inside buffer to figure as a green circle 
+EVcharging_outside_feature = ax.plot(EV_outside.geometry.x, EV_outside.geometry.y, 'o', color="red", ms=4, label="EV Charging Points outside Buffer") # add charging stations outside buffer to figure as a red circle
 
 # Create a scale
 # Adopted from Mapping with Cartopy Exercise within https://github.com/iamdonovan/egm722
@@ -85,7 +85,7 @@ markersize=7, label="EV Charging Points inside the 200m buffer") # Add patch to 
     EV_outside_marker = mlines.Line2D([], [], color="red", marker="o", linestyle="None",
 markersize=7, label="EV Charging Points outside the 200m buffer") # Add patch to legend for EV points outside buffer
     
-    ax.legend(handles=[buffer_patch, substations_marker, EV_inside_marker, EV_outside_marker], loc='lower left', fontsize=8, frameon=True) # Set position and style of legend
+    ax.legend(handles=[buffer_patch, substations_marker, EV_inside_marker, EV_outside_marker], loc='lower left', fontsize=8, frameon=True) # Set position and style of legend - lower left corner of figure
 
 # Add summary text 
 inside_count = len(EV_inside) # Store count of how many charging points are inside the buffer 
@@ -96,10 +96,10 @@ summary_text = f"Charging points inside buffer: {inside_count} \nCharging points
 ax.text(0.98, 0.02, summary_text, transform=ax.transAxes, fontsize=10, verticalalignment="bottom", horizontalalignment="right", bbox=dict(facecolor="white", edgecolor="grey", boxstyle="round", pad=0.4)) # Add to map
 
 # Add map elements 
-ax.gridlines(draw_labels=False) # Add gridlines to figure 
+ax.gridlines(draw_labels=False) # Add gridlines to figure with labelling turned off
 scale_bar(ax) # Add scale to figure
 map_legend(ax) # Add legend to figure
 ax.set_title("EV Charging Stations in relation to Substations in Belfast", fontsize=14, pad=20) # Add title to figure
 
 # Export Map 
-fig.savefig('belfastChargers.jpeg', dpi =300) # Export map as JPEG
+fig.savefig('belfastChargers.jpeg', dpi =300) # Export map as JPEG to EV_Analysis folder
