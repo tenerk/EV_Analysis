@@ -8,41 +8,56 @@ import cartopy.crs as ccrs
 import cartopy.mpl.geoaxes as cgeoaxes
 import contextily as cx 
 
-# Import Data
+# Import data
 substations = gpd.read_file(os.path.abspath('Data/belfastSubstations.shp')) # Import NIE substation data from the Data folder within Repository
 EVcharging = gpd.read_file(os.path.abspath('Data/evChargingStations_Belfast.shp')) # Import EV Charging Station data from same folder
 
-# Reproject Data for analysis and compatility with basemap
+# Reproject data for analysis and compatility with basemap
 substations_wm = substations.to_crs(epsg=3857) # Convert data from Irish Grid to Web Mercator
 EVcharging_wm = EVcharging.to_crs(epsg=3857) # Convert data from Irish Grid to Web Mercator
 
 # Create 200m buffer around substations
 buffer = substations_wm.buffer(200) # Create buffer
-buffer_gdf = gpd.GeoDataFrame(geometry=buffer, crs="EPSG:3857") # Convert the GeoSeries created by the buffer method to a GeoDataFrame
+buffer_gdf = gpd.GeoDataFrame(geometry=buffer) # Convert the GeoSeries created by the buffer method to a GeoDataFrame
+buffer_gdf.set_crs(epsg=3857, inplace=True) # Sets GDF to EPSG 3857
+
+#Classify charging points as inside or outside the 200m buffer
+within_buffer = [] # Create an empty list to store inside or outside values 
+
+for point in EVcharging_wm.geometry: # Loop through all points within named dataset
+    is_within = buffer_gdf.intersects(point).any() # Check if point intersects buffer
+    within_buffer.append(is_within) # Append results to list 
+
+EVcharging_wm["within_buffer"] = within_buffer # Adds list as column to dataset
+
+# Create an Inside and Outside GeoDataFrame
+EV_inside = EVcharging_wm[EVcharging_wm["within_buffer"]] # Create a GDF for points within the buffer
+EV_outside = EVcharging_wm[~EVcharging_wm["within_buffer"]] # Create a GDF for points outside the buffer
 
 # Create a map reference system to project data
 map_crs = ccrs.Mercator() # Creates a standard coordinate system for the map figure to match the data and basemap
 
-# Create Figure 
+# Create figure 
 fig = plt.figure(figsize=(10, 10)) # Create a figure of 10 inches x 10 inches
 ax = plt.axes(projection=map_crs) # Creates an axis in EPSG 3857 Web Mercator
 
-# Set Extent of Figure
+# Set extent of figure
 ax.set_xlim(buffer_gdf.total_bounds[[0, 2]])
 ax.set_ylim(buffer_gdf.total_bounds[[1, 3]])
 
-# Add Basemap to Figure
+# Add Basemap to figure
 cx.add_basemap(ax, source=cx.providers.OpenStreetMap.Mapnik) # Add basemap to figure 
 
-# Add Buffer to Figure 
+# Add Buffer to figure 
 buffer_feature = ShapelyFeature(substations_wm.geometry, map_crs, edgecolor="lightsalmon", facecolor="lightsalmon") # Create a buffer map feature and set symbology 
 ax.add_feature(buffer_feature) # Add buffers to figure
 
-# Add Substations to Figure
+# Add Substations to figure
 substations_feature = ax.plot(substations_wm.geometry.x, substations_wm.geometry.y, 's', color="dodgerblue", ms=3, label="NIE Substations") # Add subtations to figure
 
-# Add EV Charging Stations to Figure 
-EVcharging_feature = ax.plot(EVcharging_wm.geometry.x, EVcharging_wm.geometry.y, 'o', color="limegreen", ms=4, label="EV Charging Points") # add charging stations to figure
+# Add EV Charging Stations to figure 
+EVcharging_inside_feature = ax.plot(EV_inside.geometry.x, EV_inside.geometry.y, 'o', color="limegreen", ms=4, label="EV Charging Points inside Buffer") # add charging stations inside buffer to figure
+EVcharging_outside_feature = ax.plot(EV_outside.geometry.x, EV_outside.geometry.y, 'o', color="red", ms=4, label="EV Charging Points outside Buffer") # add charging stations outside buffer to figure
 
 # Create a scale
 # Adopted from Mapping with Cartopy Exercise within https://github.com/iamdonovan/egm722
@@ -62,13 +77,23 @@ def scale_bar(ax: cgeoaxes.GeoAxes, length=1, location=(0.92, 0.95)): # Set loca
 
 # Create patches for the legend
 def map_legend(ax: cgeoaxes.GeoAxes):
-    buffer_patch = mpatches.Patch(color="lightsalmon", label="200m Buffer") # Create legend patch for Buffer polygon data
-    substations_marker = mlines.Line2D([], [], color='dodgerblue', marker='s', linestyle='None',
-markersize=8, label="Substations") # Create legend patch for Substation point data
-    charging_marker = mlines.Line2D([], [], color='limegreen', marker='o', linestyle='None',
-markersize=8, label="EV Charging Points") # Create a legend patch for EV Charging point data
+    buffer_patch = mpatches.Patch(color="lightsalmon", label="200m Buffer") # Add patch to legend for buffer polygon data
+    substations_marker = mlines.Line2D([], [], color="dodgerblue", marker="s", linestyle="None",
+markersize=7, label="Substations") # Add patch to legend for substation point data
+    EV_inside_marker = mlines.Line2D([], [], color="limegreen", marker="o", linestyle="None",
+markersize=7, label="EV Charging Points inside the 200m buffer") # Add patch to legend for EV points inside buffer
+    EV_outside_marker = mlines.Line2D([], [], color="red", marker="o", linestyle="None",
+markersize=7, label="EV Charging Points outside the 200m buffer") # Add patch to legend for EV points outside buffer
     
-    ax.legend(handles=[buffer_patch, substations_marker, charging_marker], loc='lower left', fontsize=8, frameon=True) # Determines position and style of legend
+    ax.legend(handles=[buffer_patch, substations_marker, EV_inside_marker, EV_outside_marker], loc='lower left', fontsize=8, frameon=True) # Set position and style of legend
+
+# Add summary text 
+inside_count = len(EV_inside) # Store count of how many charging points are inside the buffer 
+outside_count = len(EV_outside) # Store count of how many charging points are outside the buffer
+
+summary_text = f"Charging points inside buffer: {inside_count} \nCharging points outside buffer: {outside_count}" # Create summary text showing count of points inside and outside buffer 
+
+ax.text(0.98, 0.02, summary_text, transform=ax.transAxes, fontsize=10, verticalalignment="bottom", horizontalalignment="right", bbox=dict(facecolor="white", edgecolor="grey", boxstyle="round", pad=0.4)) # Add to map
 
 # Add map elements 
 ax.gridlines(draw_labels=False) # Add gridlines to figure 
@@ -77,4 +102,4 @@ map_legend(ax) # Add legend to figure
 ax.set_title("EV Charging Stations in relation to Substations in Belfast", fontsize=14, pad=20) # Add title to figure
 
 # Export Map 
-fig.savefig('belfastChargers_python.jpeg', dpi =300) # Export map as JPEG
+fig.savefig('belfastChargers.jpeg', dpi =300) # Export map as JPEG
