@@ -3,10 +3,9 @@
 This script creates an interactive map of EV charging points and NIE substations in Belfast using the `folium` library and GeoPandas' `.explore()` function. It visualises:
 
 - 200 m buffer zones around substations (light salmon polygons)
-- NIE substations (blue point markers)
-- EV charging points inside the buffer zones (green car markers)
-- EV charging points outsidethe buffer zones (red car markers)
-
+- NIE substations (blue circular markers)
+- EV charging points inside the buffer zones (green point markers)
+- EV charging points outsidethe buffer zones (red point markers)
 Created as assignment for EGM722. Designed to produce a mapping output showing the proximity of EV Charging stations to sub stations utilising Open Data. 
 ---
 
