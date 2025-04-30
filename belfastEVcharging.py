@@ -49,15 +49,43 @@ ax.set_ylim(buffer_gdf.total_bounds[[1, 3]]) # Sets extent to match total bounds
 cx.add_basemap(ax, source=cx.providers.OpenStreetMap.Mapnik) # Add basemap to figure 
 
 # Add Buffer to figure 
-buffer_feature = ShapelyFeature(substations_wm.geometry, map_crs, edgecolor="lightsalmon", facecolor="lightsalmon") # Create a buffer map feature and set symbology 
+buffer_feature = ShapelyFeature(
+    buffer_gdf['geometry'],# Define geometry
+    map_crs, # Define CRS
+    edgecolor="lightsalmon", # Set edge colour
+    facecolor="lightsalmon" # Set face colour
+)  
+
 ax.add_feature(buffer_feature) # Add buffers to figure
 
 # Add Substations to figure
-substations_feature = ax.plot(substations_wm.geometry.x, substations_wm.geometry.y, 's', color="dodgerblue", ms=3, label="NIE Substations") # Add subtations to figure as a blue square
+substations_feature = ax.plot(
+    substations_wm.geometry.x, # Define x coordinates
+    substations_wm.geometry.y, # Define y coordinates
+    's', # Set marker style to square
+    color="dodgerblue", # Set marker colour
+    ms=3, # Set marker size
+    label="NIE Substations" # Add label 
+)  
 
 # Add EV Charging Stations to figure 
-EVcharging_inside_feature = ax.plot(EV_inside.geometry.x, EV_inside.geometry.y, 'o', color="limegreen", ms=4, label="EV Charging Points inside Buffer") # add charging stations inside buffer to figure as a green circle 
-EVcharging_outside_feature = ax.plot(EV_outside.geometry.x, EV_outside.geometry.y, 'o', color="red", ms=4, label="EV Charging Points outside Buffer") # add charging stations outside buffer to figure as a red circle
+EVcharging_inside_feature = ax.plot(
+    EV_inside.geometry.x, # Define x coordinates
+    EV_inside.geometry.y, # Define y coordinates
+    'o', # Set marker style to circle
+    color="limegreen",  # Set marker colour
+    ms=4, # Set marker size
+    label="EV Charging Points inside Buffer" # Add label
+) 
+
+EVcharging_outside_feature = ax.plot(
+    EV_outside.geometry.x, # Define x coordinates
+    EV_outside.geometry.y,  # Define y coordinates
+    'o', # Set marker style to circle
+    color="red",  # Set marker colour
+    ms=4, # Set marker size
+    label="EV Charging Points outside Buffer" # Add label
+) 
 
 # Create a scale
 # Adopted from Mapping with Cartopy Exercise within https://github.com/iamdonovan/egm722
@@ -68,7 +96,6 @@ def scale_bar(ax: cgeoaxes.GeoAxes, length=1, location=(0.92, 0.95)): # Set loca
 
     ax.plot([sbx, sbx-length*1000], [sby, sby], color='k', linewidth=4, transform=ax.projection) # Plot black line with thickness of 4
     ax.plot([sbx-(length/2)*1000, sbx-length*1000], [sby, sby], color='w', linewidth=2, transform=ax.projection) # Plot thinner white line
-
     ax.text(sbx, sby-(length/4)*1000, f"{length}km", ha='center', transform=ax.projection, fontsize=6) # Add label to right of scale bar
     ax.text(sbx-(length/2)*1000, sby-(length/4)*1000, f"{int(length/2)}km", ha='center', transform=ax.projection, fontsize=6) # Add halfway label
     ax.text(sbx-length*1000, sby-(length/4*1000), '0km', ha='center', transform=ax.projection, fontsize=6) # Add label to left of scale bar
@@ -76,14 +103,38 @@ def scale_bar(ax: cgeoaxes.GeoAxes, length=1, location=(0.92, 0.95)): # Set loca
     return ax
 
 # Create patches for the legend
-def map_legend(ax: cgeoaxes.GeoAxes):
-    buffer_patch = mpatches.Patch(color="lightsalmon", label="200m Buffer") # Add patch to legend for buffer polygon data
-    substations_marker = mlines.Line2D([], [], color="dodgerblue", marker="s", linestyle="None",
-markersize=7, label="Substations") # Add patch to legend for substation point data
-    EV_inside_marker = mlines.Line2D([], [], color="limegreen", marker="o", linestyle="None",
-markersize=7, label="EV Charging Points inside the 200m buffer") # Add patch to legend for EV points inside buffer
-    EV_outside_marker = mlines.Line2D([], [], color="red", marker="o", linestyle="None",
-markersize=7, label="EV Charging Points outside the 200m buffer") # Add patch to legend for EV points outside buffer
+def map_legend(ax: cgeoaxes.GeoAxes): 
+    buffer_patch = mpatches.Patch( # Add patch to legend for buffer polygon data
+        color="lightsalmon", # Set colour to lightsalmon to match data
+        label="200m Buffer" # Add label to patch
+    ) 
+    
+    substations_marker = mlines.Line2D( # Add patch to legend for substation point data
+        [], [], # Empty placeholder for x,y coordinates - not required in legend
+        color="dodgerblue", # Set colour to dodgerble 
+        marker="s", # Set marker style to square
+        linestyle="None", # Set line style to none (point data)
+        markersize=7, # Set marker size
+        label="Substations" # Add label to patch 
+    ) 
+    
+    EV_inside_marker = mlines.Line2D( # Add patch to legend for EV points inside buffer
+        [], [], # Empty placeholder for x,y coordinates
+        color="limegreen", # Set colour to limegreen 
+        marker="o", # Set marker style to circle
+        linestyle="None", # Set linestyle to none
+        markersize=7, # Set marker size
+        label="EV Charging Points inside the 200m buffer" # Add label to patch
+    ) 
+    
+    EV_outside_marker = mlines.Line2D( # Add patch to legend for EV points outside buffer
+        [], [], # Empty placeholder for x,y coordinates
+        color="red", # Set colour to red
+        marker="o", # Set marker style to circle
+        linestyle="None", # Set linestyle to none
+        markersize=7, # Set marker size
+        label="EV Charging Points outside the 200m buffer" # Add label to patch
+    ) 
     
     ax.legend(handles=[buffer_patch, substations_marker, EV_inside_marker, EV_outside_marker], loc='lower left', fontsize=8, frameon=True) # Set position and style of legend - lower left corner of figure
 
@@ -93,7 +144,19 @@ outside_count = len(EV_outside) # Store count of how many charging points are ou
 
 summary_text = f"Charging points inside buffer: {inside_count} \nCharging points outside buffer: {outside_count}" # Create summary text showing count of points inside and outside buffer 
 
-ax.text(0.98, 0.02, summary_text, transform=ax.transAxes, fontsize=10, verticalalignment="bottom", horizontalalignment="right", bbox=dict(facecolor="white", edgecolor="grey", boxstyle="round", pad=0.4)) # Add to map
+ax.text( # Add summary text to map
+    0.98, # x coordinate relative to axes
+    0.02, # y coordinate relative to axes
+    summary_text, # String to display
+    transform=ax.transAxes, # Set axes coorindates
+    fontsize=10, # Set font size
+    verticalalignment="bottom", # Align text from bottom edge
+    horizontalalignment="right", # Align text from right edge
+    bbox=dict(facecolor="white", # Set background colour of bounding box
+              edgecolor="grey", # Set edge colour of bounding box
+              boxstyle="round", # Round box corners
+              pad=0.4) # Set padding inside box
+    ) 
 
 # Add map elements 
 ax.gridlines(draw_labels=False) # Add gridlines to figure with labelling turned off
