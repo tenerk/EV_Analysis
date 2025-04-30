@@ -46,15 +46,27 @@ substations_f.explore(m=m, # Add to existing folium map
                        color="dodgerblue", # Colour set to blue
                        popup=True, # Popups enabled
                        legend=True) # Legend enabled
-EVinside_f.explore(m=m, # Add to existing folium map
-                  marker_type="marker", # Represented by pin marker with car icon in green
-                   color="limegreen", # Colour set to green
-                  popup=True, # Popup enabled
-                  legend=True) # Legend enabled.
-EVoutside_f.explore(m=m, # Add to existing folium map
-                   marker_type="marker", # Represented by pin marker with car icon in red
-                    color="red", # Colour set to red
-                   popup=True, # Popup enabled
-                   legend=True) # Legend enabled 
+
+for idx, row in EVinside_f.iterrows(): # Loop through each row in EVinside_f 
+    folium.Marker(
+        location=[row.geometry.y, row.geometry.x], # Set marker location using point coordinates from GDF
+        popup=str(row), # Convert row to string for the popup
+        icon=folium.Icon(
+        color='green', # Set marker colour to green
+        icon='car', # Select car icon
+        prefix='fa' # Specify source of icon as FontAwesome ('fa')
+        )
+    ).add_to(m) # Add marker to the existing map
+
+for idx, row in EVoutside_f.iterrows(): # Loop through each row in EVinside_f 
+    folium.Marker(
+        location=[row.geometry.y, row.geometry.x], # Set marker location using point coordinates from GDF
+        popup=str(row), # Convert row to string for the popup text
+        icon=folium.Icon(
+        color='red', # Set marker colour to red
+        icon='car', # Select car icon
+        prefix='fa' # Specify source of icon as FontAwesome ('fa')
+        )
+    ).add_to(m) # Add marker to the existing map
 
 m.save("EVcharging_Belfast.html") # Save map as HTML link

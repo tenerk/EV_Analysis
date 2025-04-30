@@ -21,4 +21,4 @@ The notebook reads spatial data from the shared `/Data/` directory located one f
 
 ## Additional Resources
 
-Within the Interactive Map - Folium folder within the repository, there is a Python Script and Jupyter Notebook provided to transform the static output into an interactive HTML link using `folium`. No additional data is required and the environment.yml file is consistent. 
+Within the `/Interactive Map - Folium folder within the repository/`, there is a Python Script and Jupyter Notebook provided to transform the static output into an interactive HTML link using `folium`. No additional data is required and the environment.yml file is consistent. 
